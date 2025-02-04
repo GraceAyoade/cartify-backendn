@@ -1,24 +1,27 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import connectDB from "./config/mongodb.js";
-import connectCloudinary from "./config/cloudinary.js";
-import userRouter from "./routes/userRoute.js";
-import productRouter from "./routes/productRoute.js";
-import cartRouter from "./routes/cartRoute.js";
-import orderRouter from "./routes/orderRoute.js";
-import seedData from "./data/seed.js";
+import connectDB from "./config/mongodb";
+import connectCloudinary from "./config/cloudinary";
+import userRouter from "./routes/auth.route";
+import productRouter from "./routes/product.route";
+import cartRouter from "./routes/cart.route";
+import orderRouter from "./routes/order.route";
+import seedData from "./data/seed";
 
 // App Config
 const app = express();
 const port = process.env.PORT || 4000;
+
+// middlewares
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
 connectDB();
 connectCloudinary();
 seedData();
 
-// middlewares
-app.use(express.json());
-app.use(cors());
 
 // api endpoints
 app.use("/api/user", userRouter);

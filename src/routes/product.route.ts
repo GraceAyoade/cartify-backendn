@@ -4,6 +4,7 @@ import {
   addProduct,
   removeProduct,
   singleProduct,
+  updateProduct,
 } from "../controllers/product.controller";
 import authMiddleware from './../middleware/auth.mw';
 import { checkRole } from "../middleware/checkRole.mw";
@@ -24,7 +25,9 @@ productRouter.post(
   addProduct
 );
 productRouter.post("/remove", authMiddleware, checkRole(["admin"]), removeProduct);
-productRouter.post("/single", singleProduct);
+productRouter.get("/single", singleProduct);
 productRouter.get("/list", listProducts);
+productRouter.put("/list", updateProduct);
+
 
 export default productRouter;

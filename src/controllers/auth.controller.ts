@@ -2,7 +2,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/user.model";
-import {Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import ErrorResponse from "../utils/errorResponse.utils";
 import userMapper from "../mapper/userMapper";
 import sendEmail from "../utils/sendEmail";
@@ -23,7 +23,7 @@ const loginUser = async (
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (isMatch) {
+    if (!isMatch) {
       return next(new ErrorResponse("invalid credentials", 404));
     }
     const token = createToken(user._id);
@@ -39,7 +39,11 @@ const loginUser = async (
 };
 
 // Route for user register
-const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const registerUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { name, email, password } = req.body;
 
@@ -52,7 +56,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
     // validating email format & strong password
     if (!validator.isEmail(email)) {
       next(new ErrorResponse("Please enter a valid email", 400));
-      }
+    }
     // validate password length
     if (password.length < 8) {
       next(new ErrorResponse("Please enter a strong password", 400));
@@ -80,7 +84,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction): Pr
       email: newUser.email,
       subject: "Welcome on board!",
       message,
-  });
+    });
   } catch (error) {
     next(error);
   }
@@ -121,7 +125,7 @@ export const verifyEmail = async (
 
 // const forgotPassword = async (req: Request, res: Response, next: NextFunction, email: string): Promise<void> => {
 //   const userEmail = await User.findOne({email})
-//   if(!userEmail) throw new ErrorResponse('email not found', 500) 
+//   if(!userEmail) throw new ErrorResponse('email not found', 500)
 //   const user = await User.findOne({email})
 //   if(!user) throw new ErrorResponse('User not found', 404)
 
@@ -132,7 +136,7 @@ export const verifyEmail = async (
 //   user.resetPasswordTokenExpires = new Date(Date.now() + (10 * 60 * 1000))
 //   await user.save()
 //   const resetUrl = `https://localhost:3000/reset-password?token=${token}`
-//   const message = `You are requesting this email because you (or someone else) requested to reset your password 
+//   const message = `You are requesting this email because you (or someone else) requested to reset your password
 //   on Heizz. If this was you, click on the link below to reset your password: \n ${resetUrl} \n
 //    If you didn't initiate this request, please ignore this email.`
 
@@ -158,4 +162,4 @@ export const verifyEmail = async (
 //   res.status(200).json({ message: result, data: null, error: false });
 // });
 
-export { loginUser, registerUser};
+export { loginUser, registerUser };

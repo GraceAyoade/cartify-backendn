@@ -24,6 +24,6 @@ orderRouter.post("/paystack", authMiddleware, placeOrderPaystack);
 orderRouter.post("/userorders", authMiddleware, userOrders);
 
 // verify payment
-orderRouter.post("/verifyPaystack", authMiddleware, verifyPaystack);
+orderRouter.post("/verify-paystack", authMiddleware, verifyPaystack);
 
 export default orderRouter;

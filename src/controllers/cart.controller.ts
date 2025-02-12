@@ -9,7 +9,7 @@ const addToCart = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId, itemId, size } = req.body;
+    const { userId, itemId, size, color, quantity } = req.body;
 
     const userData = await User.findById(userId);
     let cartData = await userData.cartData;

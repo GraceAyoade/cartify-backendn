@@ -18,7 +18,7 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   category: string;
-  subCategory: string;
+  subCategory?: string;
   sizes?: [];
   color?: [];
   bestseller: boolean;

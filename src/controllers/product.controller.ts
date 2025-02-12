@@ -55,8 +55,8 @@ const addProduct = async (
       category,
       price: Number(price),
       subCategory,
-      bestseller: bestseller === "true" ? true : false,
-      sizes: JSON.parse(sizes),
+      bestseller: bestseller?.trim() === "true" ? true : false,
+      sizes: sizes ? JSON.parse(sizes) : [],
       image: imagesUrl,
       date: Date.now(),
     };
@@ -125,4 +125,71 @@ const singleProduct = async (
   }
 };
 
-export { listProducts, addProduct, removeProduct, singleProduct };
+// function for updating product
+const updateProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const {
+      id,
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      sizes,
+      bestseller,
+    } = req.body;
+
+    // Validate request
+    if (!id) {
+      res
+        .status(400)
+        .json({ error: true, message: "Product ID is required", data: null });
+    }
+
+    const updateData: any = {
+      name,
+      description,
+      price: price ? Number(price) : undefined,
+      category,
+      subCategory,
+      bestseller: bestseller?.trim() === "true" ? true : false,
+      sizes: sizes ? JSON.parse(sizes) : undefined,
+    };
+
+    // Remove undefined properties
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key]
+    );
+
+    const product = await Product.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!product) {
+      res
+        .status(404)
+        .json({ error: true, message: "Product not found", data: null });
+    }
+    res
+      .status(200)
+      .json({
+        error: false,
+        message: "Product updated successfully",
+        data: product,
+      });
+  } catch (error) {
+    return next(new ErrorResponse("Internal server error!", 500));
+  }
+};
+
+export {
+  listProducts,
+  addProduct,
+  removeProduct,
+  singleProduct,
+  updateProduct,
+};

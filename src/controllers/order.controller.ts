@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import ErrorResponse from "../utils/errorResponse.utils";
 import paystack from "paystack";
 
-const paystackInstance = paystack(process.env.PAYSTACK_SECRET_KEY || ""); // Initialize Paystack with your secret key
+const paystackInstance = paystack(process.env.PAYSTACK_SECRET_KEY || "");
 
 // global variables
 const currency = "inr";
@@ -17,12 +17,13 @@ const placeOrder = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items, amount, address, email } = req.body;
     const orderData = {
       userId,
       items,
       address,
       amount,
+      email,
       paymentMethod: "COD",
       payment: false,
       date: Date.now(),
@@ -45,7 +46,7 @@ const placeOrderPaystack = async (
   next: NextFunction
 ) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items, amount, address, email, orderId } = req.body;
     const { origin } = req.headers;
 
     const orderData = {
@@ -53,6 +54,8 @@ const placeOrderPaystack = async (
       items,
       address,
       amount,
+      email,
+      orderId,
       paymentMethod: "Paystack",
       payment: false,
       date: Date.now(),
@@ -63,16 +66,14 @@ const placeOrderPaystack = async (
 
     // Create a payment request with Paystack
     const paymentData = {
-      email: req.body.email, // User's email
-      amount: amount * 100, // Amount in kobo
-      currency: "NGN", // Currency
+      email: email,
+      amount: amount * 100,
+      currency: "NGN",
       callback_url: `${origin}/verify-paystack?orderId=${newOrder._id}`, // Callback URL
     };
-
     const response = await paystackInstance.transaction.initialize(
       paymentData as any
     );
-
     if (response.status) {
       res.json({
         success: true,
@@ -98,8 +99,7 @@ const verifyPaystack = async (
   try {
     const response = await paystackInstance.transaction.verify(
       req.body.reference
-    ); // Verify payment with Paystack
-
+    ); 
     if (response.data.status === "success") {
       await Order.findByIdAndUpdate(orderId, { payment: true });
       res.json({ success: true, message: "Payment Successful" });

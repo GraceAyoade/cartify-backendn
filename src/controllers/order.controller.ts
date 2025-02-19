@@ -123,10 +123,28 @@ const allOrders = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const orders = await Order.find({});
-    res.status(200).json({ error: false, message: "all orders", data: orders });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      Order.find({}).sort({ date: -1 }).skip(skip).limit(limit),
+      Order.countDocuments({}),
+    ]);
+
+    res.status(200).json({
+      error: false,
+      message: "All orders",
+      data: orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    next(new ErrorResponse("unsuccessful", 400));
+    next(new ErrorResponse("Failed to fetch orders", 400));
   }
 };
 
@@ -138,12 +156,28 @@ const userOrders = async (
 ): Promise<void> => {
   try {
     const { userId } = req.body;
-    const orders = await Order.find({ userId });
-    res
-      .status(200)
-      .json({ error: false, message: "Order placed", data: orders });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      Order.find({ userId }).sort({ date: -1 }).skip(skip).limit(limit),
+      Order.countDocuments({ userId }),
+    ]);
+
+    res.status(200).json({
+      error: false,
+      message: "User orders",
+      data: orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    next(new ErrorResponse("unsuccessful", 400));
+    next(new ErrorResponse("Failed to fetch user orders", 400));
   }
 };
 

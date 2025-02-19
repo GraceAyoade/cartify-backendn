@@ -1,6 +1,8 @@
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import crypto from "crypto";
+import { createHash } from "crypto";
 import User from "../models/user.model";
 import { Request, Response, NextFunction } from "express";
 import ErrorResponse from "../utils/errorResponse.utils";
@@ -20,9 +22,7 @@ const loginUser = async (
     if (!user) {
       return next(new ErrorResponse("User not found!", 404));
     }
-
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       return next(new ErrorResponse("invalid credentials", 404));
     }
@@ -71,19 +71,30 @@ const registerUser = async (
     const user = await newUser.save();
 
     const token = createToken(user._id);
-    // send response
     res.status(201).json({
       error: false,
       message: "User registered successfully",
       data: { authToken: token, user: userMapper(newUser) },
     });
     const tokenReg = regToken(email);
-    const message = `Click on the link below to verify your email: \n http://localhost:3000/verify?token=${tokenReg}`;
-    // Send welcome email
+    const verificationUrl = `http://localhost:5173/verify/${tokenReg}`;
+    const htmlMessage = `
+        <p>Click the link below to verify your email:</p>
+      <p><a href=${verificationUrl} target="_blank" style="
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+      ">Verify Email</a></p>
+      <p>If the button doesn't work, copy and paste this link in your browser:</p>
+      <p>${verificationUrl}</p>
+    `;
     await sendEmail({
       email: newUser.email,
       subject: "Welcome on board!",
-      message,
+      html: htmlMessage,
     });
   } catch (error) {
     next(error);
@@ -96,6 +107,7 @@ export const verifyEmail = async (
   next: NextFunction
 ): Promise<void> => {
   const { token } = req.params;
+
   try {
     if (!token) {
       return next(new ErrorResponse("Invalid token", 400));
@@ -103,7 +115,7 @@ export const verifyEmail = async (
     if (!process.env.JWT_SECRET) {
       return next(new ErrorResponse("please provide secret", 400));
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
     const email = (decoded as JwtPayload).email;
     const user = await User.findOneAndUpdate(
       { email },
@@ -123,43 +135,49 @@ export const verifyEmail = async (
   }
 };
 
-// const forgotPassword = async (req: Request, res: Response, next: NextFunction, email: string): Promise<void> => {
-//   const userEmail = await User.findOne({email})
-//   if(!userEmail) throw new ErrorResponse('email not found', 500)
-//   const user = await User.findOne({email})
-//   if(!user) throw new ErrorResponse('User not found', 404)
+const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ErrorResponse('User not found', 404));
+  }
+  const token = crypto.randomBytes(20).toString('hex')
+  const hashedToken = createHash('sha256').update(token).digest('hex')
 
-//   const token = crypto.randomBytes(20).toString('hex')
-//   const hashedToken = createHash('sha256').update(token).digest('hex')
+  user.resetPasswordToken = hashedToken
+  user.resetPasswordTokenExpires = new Date(Date.now() + (10 * 60 * 1000))
+  await user.save()
+  const resetUrl = `https://localhost:5173/reset-password?token=${token}`
+  const message = `You are requesting this email because you (or someone else) requested to reset your password
+  on Heizz. If this was you, click on the link below to reset your password: \n ${resetUrl} \n
+   If you didn't initiate this request, please ignore this email.`
 
-//   user.resetPasswordToken = hashedToken
-//   user.resetPasswordTokenExpires = new Date(Date.now() + (10 * 60 * 1000))
-//   await user.save()
-//   const resetUrl = `https://localhost:3000/reset-password?token=${token}`
-//   const message = `You are requesting this email because you (or someone else) requested to reset your password
-//   on Heizz. If this was you, click on the link below to reset your password: \n ${resetUrl} \n
-//    If you didn't initiate this request, please ignore this email.`
+  try {
+      await sendEmail({
+          email: user.email,
+          subject: 'Reset Password',
+          message
+      })
+  } catch (error) {
+      user.resetPasswordToken = undefined
+      user.resetPasswordTokenExpires = undefined
+      await user.save()
+      return next(new ErrorResponse('Error sending mail', 500)) ;
+  }
 
-//   try {
-//       await sendEmail({
-//           email: user.email,
-//           subject: 'Reset Password',
-//           message
-//       })
-//   } catch (error) {
-//       user.resetPasswordToken = undefined
-//       user.resetPasswordTokenExpires = undefined
-//       await user.save()
-//       return next(new ErrorResponse('Error sending mail', 500)) ;
-//   }
+  res.status(200).json({
+    error: false,
+    message: "Password reset email sent!",
+    data: null
+  });
+}
 
-//   return next(new ErrorResponse("Password reset email sent!", 200))
-// }
-
-// export const handleForgotPassword = async (req: Request, res: Response) => {
-//   const { email } = req.body;
-//   const result = await forgotPassword(email);
-//   res.status(200).json({ message: result, data: null, error: false });
-// });
+export const handleForgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await forgotPassword(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
 
 export { loginUser, registerUser };

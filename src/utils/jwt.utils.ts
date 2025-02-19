@@ -4,8 +4,8 @@ export const createToken = (id: any) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || "", { expiresIn: "2h" });
 };
 
-export const regToken = (newUser: any): string => {
-  return jwt.sign({ email: newUser.email }, process.env.JWT_SECRET || "", {
+export const regToken = (email: any): string => {
+  return jwt.sign({ email }, process.env.JWT_SECRET || "", {
     expiresIn: "10m",
   });
 };

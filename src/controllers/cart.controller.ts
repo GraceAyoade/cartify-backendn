@@ -10,9 +10,26 @@ const addToCart = async (
 ): Promise<void> => {
   try {
     const { userId, itemId, size, color, quantity } = req.body;
-
     const userData = await User.findById(userId);
     let cartData = await userData.cartData;
+
+    // if (!cartData[itemId]) {
+    //   cartData[itemId] = {};
+    // }
+    // if (size) {
+    //   if (cartData[itemId][size]) {
+    //     cartData[itemId][size] += quantity || 1;
+    //   } else {
+    //     cartData[itemId][size] = quantity || 1;
+    //   }
+    // }
+    // if (color) {
+    //   if (cartData[itemId][color]) {
+    //     cartData[itemId][color] += quantity || 1;
+    //   } else {
+    //     cartData[itemId][color] = quantity || 1;
+    //   }
+    // }
 
     if (cartData[itemId]) {
       if (cartData[itemId][size]) {
@@ -66,7 +83,6 @@ const getUserCart = async (
 ): Promise<void> => {
   try {
     const { userId } = req.body;
-
     const userData = await User.findById(userId);
     let cartData = await userData.cartData;
     res.status(200).json({

@@ -20,7 +20,7 @@ export interface IProduct extends Document {
   category: string;
   subCategory?: string;
   sizes?: [];
-  color?: [];
+  colors?: [];
   bestseller: boolean;
   quantity: number;
   image: any;
@@ -39,7 +39,8 @@ export interface IOrder {
 }
 
 export interface IMailOptions {
-  message: string;
+  message?: string;
   subject: string;
   email: string;
+  html?: string;
 }

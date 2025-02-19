@@ -17,6 +17,8 @@ const addProduct = async (
       category,
       subCategory,
       sizes,
+      colors,
+      quantity,
       bestseller,
     } = req.body;
 
@@ -57,6 +59,8 @@ const addProduct = async (
       subCategory,
       bestseller: bestseller?.trim() === "true" ? true : false,
       sizes: sizes ? JSON.parse(sizes) : [],
+      colors: colors ? JSON.parse(colors) : [],
+      quantity: Number(quantity),
       image: imagesUrl,
       date: Date.now(),
     };
@@ -140,6 +144,8 @@ const updateProduct = async (
       category,
       subCategory,
       sizes,
+      colors,
+      quantity,
       bestseller,
     } = req.body;
 
@@ -158,6 +164,8 @@ const updateProduct = async (
       subCategory,
       bestseller: bestseller?.trim() === "true" ? true : false,
       sizes: sizes ? JSON.parse(sizes) : undefined,
+      colors: colors ? JSON.parse(colors) : undefined,
+      quantity: quantity ? Number(price) : undefined,
     };
 
     // Remove undefined properties

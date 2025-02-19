@@ -95,13 +95,17 @@ const verifyPaystack = async (
   next: NextFunction
 ) => {
   const { orderId } = req.query;
-
+  const userId = req.user;
   try {
     const response = await paystackInstance.transaction.verify(
       req.body.reference
-    ); 
+    );
     if (response.data.status === "success") {
       await Order.findByIdAndUpdate(orderId, { payment: true });
+      const user = await User.findById(userId);
+      user.cartData = {};
+      await user.save();
+
       res.json({ success: true, message: "Payment Successful" });
     } else {
       res.json({ success: false, message: "Payment Failed" });
